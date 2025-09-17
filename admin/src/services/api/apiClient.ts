@@ -23,7 +23,21 @@ export class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${import.meta.env.VITE_API_BASE_URL}/api`;
+    const rawBaseUrl = import.meta.env.VITE_ADMIN_FRONTEND_API_BASE_URL;
+    if (!rawBaseUrl) {
+      throw new Error("VITE_ADMIN_FRONTEND_API_BASE_URL is not defined");
+    }
+
+    const trimmedBaseUrl = rawBaseUrl.trim();
+    if (!trimmedBaseUrl) {
+      throw new Error("VITE_ADMIN_FRONTEND_API_BASE_URL cannot be empty");
+    }
+
+    const normalizedBaseUrl = trimmedBaseUrl.replace(/\/+$/, "");
+
+    this.baseUrl = normalizedBaseUrl.endsWith("/api")
+      ? normalizedBaseUrl
+      : `${normalizedBaseUrl}/api`;
   }
 
   private async request<T>(
