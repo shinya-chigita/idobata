@@ -15,6 +15,36 @@ import { logger } from "./utils/logger.js";
 // Create Express app
 const app = express();
 
+// Temporary debug hook to trace route registration in non-production builds.
+// Remove or disable this block once the unexpected route invocation has been
+// identified. Production builds never execute this block.
+if (process.env.NODE_ENV !== "production") {
+  const routeDebugMethods = [
+    "use",
+    "get",
+    "post",
+    "put",
+    "patch",
+    "delete",
+    "all",
+  ] as const;
+
+  const debugApp = app as express.Application &
+    Record<string, (...args: unknown[]) => unknown>;
+
+  for (const methodName of routeDebugMethods) {
+    const originalMethod = debugApp[methodName].bind(app) as (
+      ...methodArgs: unknown[]
+    ) => unknown;
+
+    debugApp[methodName] = (...methodArgs: unknown[]) => {
+      const [firstArg] = methodArgs;
+      console.log("[ROUTE-DEBUG]", methodName.toUpperCase(), firstArg);
+      return originalMethod(...methodArgs);
+    };
+  }
+}
+
 // Middleware
 app.use(express.json());
 app.use(
