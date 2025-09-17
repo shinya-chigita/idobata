@@ -8,7 +8,7 @@ console.log("------------------------------------");
 import cors from "cors";
 // --- END DEBUG ---
 import express from "express";
-import { CORS_ORIGIN, PORT } from "./config.js";
+import { API_MOUNT_PATH, CORS_ORIGIN, PORT } from "./config.js";
 import chatRoutes from "./routes/chat.js";
 import { logger } from "./utils/logger.js";
 
@@ -56,10 +56,13 @@ app.use(
 );
 
 // Routes
-app.use("/chat", chatRoutes);
+const apiRoute = (suffix: string) =>
+  `${API_MOUNT_PATH === "/" ? "" : API_MOUNT_PATH}${suffix}`;
+
+app.use(apiRoute("/chat"), chatRoutes);
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get(apiRoute("/health"), (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
@@ -83,6 +86,7 @@ app.use(
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`CORS enabled for origin: ${CORS_ORIGIN}`);
+  logger.info(`API routes mounted at: ${API_MOUNT_PATH}`);
 });
 
 // Handle graceful shutdown
