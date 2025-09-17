@@ -34,6 +34,31 @@ try {
 
 // --- Express App Setup ---
 const app = express();
+
+// Temporary debug hook to trace route registration in non-production builds.
+// Remove or disable this block once the unexpected route invocation has been
+// identified. Production builds never execute this block.
+if (process.env.NODE_ENV !== "production") {
+  const routeDebugMethods = [
+    "use",
+    "get",
+    "post",
+    "put",
+    "patch",
+    "delete",
+    "all",
+  ];
+
+  for (const methodName of routeDebugMethods) {
+    const originalMethod = app[methodName].bind(app);
+
+    app[methodName] = (...args) => {
+      const [firstArg] = args;
+      console.log("[ROUTE-DEBUG]", methodName.toUpperCase(), firstArg);
+      return originalMethod(...args);
+    };
+  }
+}
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {

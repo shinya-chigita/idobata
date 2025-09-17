@@ -118,6 +118,21 @@ docker-compose logs -f
 docker-compose logs -f policy-backend
 ```
 
+## Express ルートデバッグフック (開発専用)
+
+`idea-discussion` と `policy-edit` のバックエンドでは、`NODE_ENV` が
+`production` でない場合に、`app.use` や `app.get` などのルート登録メソッドを
+ラップして `[ROUTE-DEBUG]` ログを出力します。これにより、どのミドルウェアや
+ルートハンドラーが問題のリクエストを受け取っているかを追跡できます。
+
+- **無効化するには**: 該当プロセスを `NODE_ENV=production` で起動するか、
+  ブートストラップファイル (`idea-discussion/backend/server.js` および
+  `policy-edit/backend/src/index.ts`) のコメント付きデバッグブロックを削除し
+  てください。
+- **削除の目安**: 想定外のルート呼び出しの原因が特定できたら、このフックを
+  取り除いて通常運用に戻してください。生産環境では実行されないため、既存の
+  本番ビルドには影響しません。
+
 ## 環境の停止
 
 実行中のサービスを停止し、コンテナ、ネットワークを削除するには（名前付きボリューム `mongo_data` は保持されます）:
