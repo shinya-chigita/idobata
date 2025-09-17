@@ -10,7 +10,31 @@ import cors from "cors";
 import express from "express";
 import { CORS_ORIGIN, PORT } from "./config.js";
 import chatRoutes from "./routes/chat.js";
+import { normalizeMountPath } from "./utils/mountPath.js";
 import { logger } from "./utils/logger.js";
+
+const fallbackApiMount = (() => {
+  const baseUrl = process.env.IDEA_FRONTEND_API_BASE_URL;
+  if (!baseUrl) {
+    return undefined;
+  }
+
+  try {
+    return new URL(baseUrl).pathname;
+  } catch (error) {
+    logger.warn(
+      "Failed to parse IDEA_FRONTEND_API_BASE_URL for mount path fallback:",
+      error
+    );
+    return undefined;
+  }
+})();
+
+const API_MOUNT = normalizeMountPath(
+  process.env.API_MOUNT_PATH ?? fallbackApiMount
+);
+
+logger.info(`Using API mount path: ${API_MOUNT}`);
 
 // Create Express app
 const app = express();
@@ -25,13 +49,17 @@ app.use(
   })
 );
 
+const apiRouter = express.Router();
+
 // Routes
-app.use("/chat", chatRoutes);
+apiRouter.use("/chat", chatRoutes);
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+apiRouter.get("/health", (_req: express.Request, res: express.Response) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+app.use(API_MOUNT, apiRouter);
 
 // Error handling middleware
 app.use(

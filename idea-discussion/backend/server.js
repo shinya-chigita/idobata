@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { Server } from "socket.io";
 import themeRoutes from "./routes/themeRoutes.js"; // Import theme routes
 import { callLLM } from "./services/llmService.js"; // Import LLM service
+import { normalizeMountPath } from "../../policy-edit/backend/src/utils/mountPath.js";
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -41,6 +42,29 @@ const io = new Server(httpServer, {
 });
 const PORT = process.env.PORT || 3000; // Use port from env or default to 3000
 
+const fallbackApiMount = (() => {
+  const baseUrl = process.env.IDEA_FRONTEND_API_BASE_URL;
+  if (!baseUrl) {
+    return undefined;
+  }
+
+  try {
+    return new URL(baseUrl).pathname;
+  } catch (error) {
+    console.warn(
+      "Failed to parse IDEA_FRONTEND_API_BASE_URL for mount path fallback:",
+      error
+    );
+    return undefined;
+  }
+})();
+
+const API_MOUNT = normalizeMountPath(
+  process.env.API_MOUNT_PATH ?? fallbackApiMount
+);
+
+console.log(`Using API mount path: ${API_MOUNT}`);
+
 // --- Middleware ---
 // CORS: Allow requests from the frontend development server
 app.use(
@@ -57,9 +81,11 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
+const apiRouter = express.Router();
+
 // --- API Routes ---
 // Health Check Endpoint
-app.get("/api/health", (req, res) => {
+apiRouter.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date() });
 });
 
@@ -81,29 +107,31 @@ import topPageRoutes from "./routes/topPageRoutes.js"; // Import top page routes
 import userRoutes from "./routes/userRoutes.js"; // Import user routes
 
 // Theme management routes
-app.use("/api/themes", themeRoutes);
+apiRouter.use("/themes", themeRoutes);
 
-app.use("/api/auth", authRoutes);
+apiRouter.use("/auth", authRoutes);
 
-app.use("/api/themes/:themeId/questions", themeQuestionRoutes);
-app.use("/api/themes/:themeId/problems", themeProblemRoutes);
-app.use("/api/themes/:themeId/solutions", themeSolutionRoutes);
-app.use(
-  "/api/themes/:themeId/generate-questions",
+apiRouter.use("/themes/:themeId/questions", themeQuestionRoutes);
+apiRouter.use("/themes/:themeId/problems", themeProblemRoutes);
+apiRouter.use("/themes/:themeId/solutions", themeSolutionRoutes);
+apiRouter.use(
+  "/themes/:themeId/generate-questions",
   themeGenerateQuestionsRoutes
 );
-app.use("/api/themes/:themeId/policy-drafts", themePolicyRoutes);
-app.use("/api/themes/:themeId/digest-drafts", themeDigestRoutes);
-app.use("/api/themes/:themeId/import", themeImportRoutes);
-app.use("/api/themes/:themeId/chat", themeChatRoutes);
-app.use("/api/themes/:themeId", themeEmbeddingRoutes);
-app.use("/api/questions/:questionId", questionEmbeddingRoutes);
+apiRouter.use("/themes/:themeId/policy-drafts", themePolicyRoutes);
+apiRouter.use("/themes/:themeId/digest-drafts", themeDigestRoutes);
+apiRouter.use("/themes/:themeId/import", themeImportRoutes);
+apiRouter.use("/themes/:themeId/chat", themeChatRoutes);
+apiRouter.use("/themes/:themeId", themeEmbeddingRoutes);
+apiRouter.use("/questions/:questionId", questionEmbeddingRoutes);
 
-app.use("/api/site-config", siteConfigRoutes);
-app.use("/api/top-page-data", topPageRoutes); // Add top page routes
-app.use("/api/users", userRoutes);
-app.use("/api/likes", likeRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+apiRouter.use("/site-config", siteConfigRoutes);
+apiRouter.use("/top-page-data", topPageRoutes); // Add top page routes
+apiRouter.use("/users", userRoutes);
+apiRouter.use("/likes", likeRoutes);
+apiRouter.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+app.use(API_MOUNT, apiRouter);
 
 // --- Serve static files in production ---
 // This section will be useful when deploying to production
@@ -120,19 +148,31 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // For development, add a fallback route to handle non-API requests
+const isApiRequestPath = (requestPath) => {
+  if (API_MOUNT === "/") {
+    return true;
+  }
+
+  return (
+    requestPath === API_MOUNT || requestPath.startsWith(`${API_MOUNT}/`)
+  );
+};
+
 app.use((req, res, next) => {
   // If this is an API request, continue to the API routes
-  if (req.path.startsWith("/api")) {
+  if (isApiRequestPath(req.path)) {
     return next();
   }
 
   const userIdProfileImageRegex = /^\/([0-9a-f-]+)\/profile-image$/;
   const match = req.path.match(userIdProfileImageRegex);
   if (match && req.method === "POST") {
+    const apiBase = API_MOUNT === "/" ? "" : API_MOUNT;
+    const redirectPath = `${apiBase}/users${req.path}`;
     console.log(
-      `Redirecting request from ${req.path} to /api/users${req.path}`
+      `Redirecting request from ${req.path} to ${redirectPath}`
     );
-    req.url = `/api/users${req.path}`;
+    req.url = redirectPath;
     return next();
   }
 
