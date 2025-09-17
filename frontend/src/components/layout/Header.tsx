@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useSiteConfig } from "../../contexts/SiteConfigContext";
+import { SITE } from "../../config/site";
 import { Button } from "../ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "../ui/sheet";
 // ヘッダーの高さ定数
@@ -42,8 +42,6 @@ const NAV_ITEMS = [
 
 const Header: React.FC = () => {
   const location = useLocation();
-  const { siteConfig, loading } = useSiteConfig();
-
   return (
     <header className="sticky top-0 z-50 w-full border-b-2 border-[#2D80FF] bg-white">
       <div className="flex items-center justify-between px-6 py-5 md:px-10 md:py-4">
@@ -53,9 +51,7 @@ const Header: React.FC = () => {
             to="/top"
             className="font-bold text-lg md:text-xl tracking-wider text-[#27272A] leading-none hover:text-[#2D80FF] transition-colors cursor-pointer"
           >
-            {loading
-              ? "..."
-              : siteConfig?.title || "XX党みんなの政策フォーラム"}
+            {SITE.nameJa}
           </Link>
           <div className="flex items-center gap-1">
             <span className="text-[8px] font-bold text-[#94B9F9] leading-[2em] tracking-[0.0375em]">
