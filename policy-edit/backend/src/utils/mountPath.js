@@ -3,6 +3,19 @@
 const DEFAULT_MOUNT_PATH = "/api";
 const PLACEHOLDER_BASE_URL = "http://placeholder.local";
 
+function normalizeRoutePath(routePath) {
+  const trimmed = String(routePath).trim();
+  if (trimmed === "") {
+    return "/";
+  }
+
+  if (trimmed === "/") {
+    return "/";
+  }
+
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
 export function normalizeMountPath(rawPath) {
   if (rawPath == null) {
     return DEFAULT_MOUNT_PATH;
@@ -40,4 +53,40 @@ export function normalizeMountPath(rawPath) {
   }
 
   return normalized;
+}
+
+export function joinMountPath(mountPath, routePath = "/") {
+  const normalizedMount = normalizeMountPath(mountPath);
+  const normalizedRoute = normalizeRoutePath(routePath);
+
+  if (normalizedRoute === "/") {
+    return normalizedMount;
+  }
+
+  if (normalizedMount === "/") {
+    return normalizedRoute;
+  }
+
+  return `${normalizedMount}${normalizedRoute}`;
+}
+
+export function createMountPathJoiner(mountPath) {
+  const normalizedMount = normalizeMountPath(mountPath);
+
+  return (routePath = "/") => joinMountPath(normalizedMount, routePath);
+}
+
+export function isWithinMountPath(mountPath, requestPath) {
+  const normalizedMount = normalizeMountPath(mountPath);
+
+  if (normalizedMount === "/") {
+    return true;
+  }
+
+  const normalizedRequest = normalizeRoutePath(requestPath);
+
+  return (
+    normalizedRequest === normalizedMount ||
+    normalizedRequest.startsWith(`${normalizedMount}/`)
+  );
 }

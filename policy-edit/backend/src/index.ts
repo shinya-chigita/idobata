@@ -10,7 +10,10 @@ import cors from "cors";
 import express from "express";
 import { CORS_ORIGIN, PORT } from "./config.js";
 import chatRoutes from "./routes/chat.js";
-import { normalizeMountPath } from "./utils/mountPath.js";
+import {
+  createMountPathJoiner,
+  normalizeMountPath,
+} from "./utils/mountPath.js";
 import { logger } from "./utils/logger.js";
 
 const fallbackApiMount = (() => {
@@ -34,6 +37,8 @@ const API_MOUNT = normalizeMountPath(
   process.env.API_MOUNT_PATH ?? fallbackApiMount
 );
 
+const withApiMount = createMountPathJoiner(API_MOUNT);
+
 logger.info(`Using API mount path: ${API_MOUNT}`);
 
 // Create Express app
@@ -49,17 +54,16 @@ app.use(
   })
 );
 
-const apiRouter = express.Router();
-
 // Routes
-apiRouter.use("/chat", chatRoutes);
+app.use(withApiMount("/chat"), chatRoutes);
 
 // Health check endpoint
-apiRouter.get("/health", (_req: express.Request, res: express.Response) => {
+app.get(withApiMount("/health"), (
+  _req: express.Request,
+  res: express.Response
+) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
-
-app.use(API_MOUNT, apiRouter);
 
 // Error handling middleware
 app.use(
