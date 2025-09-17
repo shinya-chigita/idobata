@@ -88,8 +88,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // --- API Routes ---
+const apiRouter = express.Router();
+
 // Health Check Endpoint
-app.get(withApiMount("/health"), (req, res) => {
+apiRouter.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date() });
 });
 
@@ -111,32 +113,34 @@ import topPageRoutes from "./routes/topPageRoutes.js"; // Import top page routes
 import userRoutes from "./routes/userRoutes.js"; // Import user routes
 
 // Theme management routes
-app.use(withApiMount("/themes"), themeRoutes);
+apiRouter.use("/themes", themeRoutes);
 
-app.use(withApiMount("/auth"), authRoutes);
+apiRouter.use("/auth", authRoutes);
 
-app.use(withApiMount("/themes/:themeId/questions"), themeQuestionRoutes);
-app.use(withApiMount("/themes/:themeId/problems"), themeProblemRoutes);
-app.use(withApiMount("/themes/:themeId/solutions"), themeSolutionRoutes);
-app.use(
-  withApiMount("/themes/:themeId/generate-questions"),
+apiRouter.use("/themes/:themeId/questions", themeQuestionRoutes);
+apiRouter.use("/themes/:themeId/problems", themeProblemRoutes);
+apiRouter.use("/themes/:themeId/solutions", themeSolutionRoutes);
+apiRouter.use(
+  "/themes/:themeId/generate-questions",
   themeGenerateQuestionsRoutes
 );
-app.use(withApiMount("/themes/:themeId/policy-drafts"), themePolicyRoutes);
-app.use(withApiMount("/themes/:themeId/digest-drafts"), themeDigestRoutes);
-app.use(withApiMount("/themes/:themeId/import"), themeImportRoutes);
-app.use(withApiMount("/themes/:themeId/chat"), themeChatRoutes);
-app.use(withApiMount("/themes/:themeId"), themeEmbeddingRoutes);
-app.use(withApiMount("/questions/:questionId"), questionEmbeddingRoutes);
+apiRouter.use("/themes/:themeId/policy-drafts", themePolicyRoutes);
+apiRouter.use("/themes/:themeId/digest-drafts", themeDigestRoutes);
+apiRouter.use("/themes/:themeId/import", themeImportRoutes);
+apiRouter.use("/themes/:themeId/chat", themeChatRoutes);
+apiRouter.use("/themes/:themeId", themeEmbeddingRoutes);
+apiRouter.use("/questions/:questionId", questionEmbeddingRoutes);
 
-app.use(withApiMount("/site-config"), siteConfigRoutes);
-app.use(withApiMount("/top-page-data"), topPageRoutes); // Add top page routes
-app.use(withApiMount("/users"), userRoutes);
-app.use(withApiMount("/likes"), likeRoutes);
-app.use(
-  withApiMount("/uploads"),
+apiRouter.use("/site-config", siteConfigRoutes);
+apiRouter.use("/top-page-data", topPageRoutes); // Add top page routes
+apiRouter.use("/users", userRoutes);
+apiRouter.use("/likes", likeRoutes);
+apiRouter.use(
+  "/uploads",
   express.static(path.join(__dirname, "uploads"))
 );
+
+app.use(API_MOUNT, apiRouter);
 
 // Helper to check whether a request path is scoped to the API mount
 const isApiRequestPath = (requestPath) =>
