@@ -16,7 +16,7 @@ import { ProcessChatMessageUsecase } from "../usecases/ProcessChatMessageUsecase
 const router = express.Router();
 const mcpClientRef = { current: null as McpClient | null };
 
-// POST /api/chat - Process a chat message
+// POST {API_MOUNT_PATH}/chat - Process a chat message (default mount: /api)
 router.post("/", async (req, res) => {
   if (!mcpClientRef.current) {
     return res.status(500).json({ error: "MCP client is not initialized" });
@@ -46,7 +46,7 @@ router.post("/", async (req, res) => {
   return res.json(result.value);
 });
 
-// POST /api/chat/connect - Connect to the MCP server
+// POST {API_MOUNT_PATH}/chat/connect - Connect to the MCP server (default mount: /api)
 router.post("/connect", async (req, res) => {
   const usecase = new ConnectMcpServerUsecase(mcpClientRef);
   const result = await usecase.execute();
@@ -65,7 +65,7 @@ router.post("/connect", async (req, res) => {
   return res.json(result.value);
 });
 
-// GET /api/chat/status - Check MCP client status
+// GET {API_MOUNT_PATH}/chat/status - Check MCP client status (default mount: /api)
 router.get("/status", (req, res) => {
   return res.json({
     initialized: mcpClientRef.current !== null,

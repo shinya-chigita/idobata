@@ -13,6 +13,43 @@ dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 export const PORT = process.env.PORT || 3001;
 export const NODE_ENV = process.env.NODE_ENV || "development";
 
+const DEFAULT_API_MOUNT_PATH = "/api";
+
+const normaliseApiMountPath = (value?: string): string => {
+  if (!value) {
+    return DEFAULT_API_MOUNT_PATH;
+  }
+
+  const trimmed = value.trim();
+
+  if (trimmed === "") {
+    return DEFAULT_API_MOUNT_PATH;
+  }
+
+  if (trimmed === "/") {
+    return "/";
+  }
+
+  const withLeadingSlash = trimmed.startsWith("/")
+    ? trimmed
+    : `/${trimmed}`;
+
+  const collapsedSlashes = withLeadingSlash.replace(/\/{2,}/g, "/");
+
+  const withoutTrailingSlash =
+    collapsedSlashes.length > 1
+      ? collapsedSlashes.replace(/\/+$/, "")
+      : collapsedSlashes;
+
+  const normalised = withoutTrailingSlash || DEFAULT_API_MOUNT_PATH;
+
+  return normalised === "" ? DEFAULT_API_MOUNT_PATH : normalised;
+};
+
+export const API_MOUNT_PATH = normaliseApiMountPath(
+  process.env.API_MOUNT_PATH
+);
+
 // OpenRouter API configuration
 export const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
