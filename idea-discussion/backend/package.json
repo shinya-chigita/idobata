@@ -6,7 +6,7 @@
   "scripts": {
     "test": "vitest run --passWithNoTests",
     "build": "tsc",
-    "start": "node build/server.js",
+    "start": "node ../build/server.js",
     "dev": "nodemon --exec npx ts-node server.js",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
