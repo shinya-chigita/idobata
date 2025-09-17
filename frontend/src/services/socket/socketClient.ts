@@ -35,10 +35,18 @@ class SocketClient {
       return;
     }
 
-    const baseUrl =
+    const rawBaseUrl =
       typeof import.meta.env !== "undefined"
-        ? import.meta.env.VITE_API_BASE_URL || ""
+        ? import.meta.env.VITE_IDEA_FRONTEND_API_BASE_URL
         : "";
+    const trimmedBaseUrl = rawBaseUrl ? rawBaseUrl.trim() : "";
+
+    if (!trimmedBaseUrl) {
+      throw new Error("VITE_IDEA_FRONTEND_API_BASE_URL is not defined");
+    }
+
+    const baseUrl = trimmedBaseUrl.replace(/\/+$/, "");
+
     this.socket = io(baseUrl, {
       autoConnect: false,
       reconnection: true,
